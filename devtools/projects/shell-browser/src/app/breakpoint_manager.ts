@@ -206,12 +206,14 @@ export class BreakpointManager {
       console.warn('Could not find URL for scriptId:', scriptId, 'falling back to scriptId');
       bpResult = (await this.debuggerApi.sendCommand(target, 'Debugger.setBreakpoint', {
         location: {scriptId, lineNumber, columnNumber},
+        condition: 'typeof node !== "undefined" ? node.__cdpBreakOnWrite : true',
       })) as SetBreakpointResult;
     } else {
       bpResult = (await this.debuggerApi.sendCommand(target, 'Debugger.setBreakpointByUrl', {
         url,
         lineNumber,
         columnNumber,
+        condition: 'typeof node !== "undefined" ? node.__cdpBreakOnWrite : true',
       })) as SetBreakpointResult;
     }
 
@@ -248,6 +250,15 @@ export class BreakpointManager {
     }
 
     await this.ensureAttached(target);
+
+    try {
+      await this.debuggerApi.sendCommand(target, 'Runtime.evaluate', {
+        expression: `inspectedApplication.clearSignalBreakOnWrite(${stringifyAndEscape(position)})`,
+        objectGroup: 'angular-devtools',
+      });
+    } catch (e) {
+      // Ignore cleanup error if tab navigated or node was destroyed
+    }
 
     await this.debuggerApi.sendCommand(target, 'Debugger.removeBreakpoint', {
       breakpointId: entry.breakpointId,

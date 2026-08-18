@@ -87,7 +87,30 @@ const chromeWindowExtensions = {
     if (!signal) {
       return;
     }
+    if (signal.kind === 'signal' && signal.debuggableFn) {
+      const node = (signal.debuggableFn as any).__node;
+      if (node) {
+        node.__cdpBreakOnWrite = true;
+      }
+    }
     return signal.debuggableFn;
+  },
+  clearSignalBreakOnWrite: (args: any): void => {
+    const ng = ngDebugClient();
+    const {element, signalId} = JSON.parse(args) as SignalNodePosition;
+    const node = queryDirectiveForest(element, buildDirectiveForest());
+    if (!node) return;
+    const injector = node.injector ?? getInjectorFromElementNode(node.nativeElement!);
+    if (!injector) return;
+    const graph = ng.ɵgetSignalGraph?.(injector);
+    if (!graph) return;
+    const signal = graph.nodes.find((n) => n.id === signalId);
+    if (signal && signal.kind === 'signal' && signal.debuggableFn) {
+      const sigNode = (signal.debuggableFn as any).__node;
+      if (sigNode) {
+        sigNode.__cdpBreakOnWrite = false;
+      }
+    }
   },
   findPropertyByPosition: (args: any): any => {
     const {directivePosition, objectPath} = JSON.parse(args) as {

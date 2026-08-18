@@ -116,6 +116,7 @@ function getNodesAndEdgesFromSignalMap(signalMap: ReadonlyMap<ReactiveNode, Reac
         value: consumer.value,
         kind: consumer.kind,
         epoch: consumer.version,
+        debuggableFn: (consumer as any).setFn,
         id,
       });
     } else if (isTemplateEffectNode(consumer)) {

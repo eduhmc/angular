@@ -68,6 +68,10 @@ export function createSignal<T>(
 
   runPostProducerCreatedFn(node);
   const set = (newValue: T) => signalSetFn(node, newValue);
+  if (typeof ngDevMode !== 'undefined' && ngDevMode) {
+    (node as any).setFn = set;
+    (set as any).__node = node;
+  }
   const update = (updateFn: (value: T) => T) => signalUpdateFn(node, updateFn);
   return [getter, set, update];
 }
